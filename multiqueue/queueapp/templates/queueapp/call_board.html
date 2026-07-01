@@ -1,0 +1,124 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tableau d’appel | {{ queue.name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="icon" href="{% static 'queueapp/img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'queueapp/css/react-icons-lite.css' %}">
+  <link rel="stylesheet" href="{% static 'queueapp/css/theme.css' %}">
+</head>
+<body class="call-board-body">
+  <main class="call-board-shell">
+    <header class="call-board-header">
+      <div>
+        <div class="board-brand-line">
+            {% if queue_logo_url %}
+            <img src="{{ queue_logo_url }}" alt="Logo {{ queue.name }}" class="board-department-logo" onerror="this.onerror=null;this.src='{% static queue_logo %}';">
+            {% else %}
+            <img src="{% static queue_logo %}" alt="Logo {{ queue.name }}" class="board-department-logo">
+            {% endif %}
+            <span class="board-kicker"><i class="fas fa-tv"></i> Tableau d’appel du département</span>
+        </div>
+        <h1>{{ queue.name }}</h1>
+        <p>{{ queue.get_service_type_display }} · Guichets paramétrables</p>
+      </div>
+      <div class="board-clock">
+        <span id="board-date"></span>
+        <strong id="board-time"></strong>
+      </div>
+      <nav class="board-actions no-print">
+        <a href="{% url 'queue_detail' queue.id %}" class="btn btn-light"><i class="fas fa-cogs me-2"></i>Gestion</a>
+        <a href="{% url 'index' %}" class="btn btn-outline-light"><i class="fas fa-home me-2"></i>Accueil</a>
+      </nav>
+    </header>
+
+    <section class="board-main-grid">
+      <article class="now-calling-card">
+        <span class="board-label">Dernier appel</span>
+        <div id="now-ticket" class="now-ticket">--</div>
+        <div id="now-counter" class="now-counter">En attente d’appel</div>
+      </article>
+
+      <article class="board-panel">
+        <div class="board-panel-head">
+          <h2><i class="fas fa-list-ol me-2"></i>Prochains tickets</h2>
+          <span id="waiting-count">0 en attente</span>
+        </div>
+        <div id="next-list" class="board-next-list"><div class="board-empty">Aucun ticket en attente.</div></div>
+      </article>
+
+      <article class="board-panel">
+        <div class="board-panel-head">
+          <h2><i class="fas fa-headset me-2"></i>Guichets</h2>
+          <span id="available-count">0 disponible</span>
+        </div>
+        <div id="counter-list" class="board-counter-list"><div class="board-empty">Chargement des guichets...</div></div>
+      </article>
+    </section>
+
+    <footer class="board-footer">
+      <span>Veuillez rester attentif à l’appel vocal et visuel.</span>
+      <strong id="board-status">Actualisation automatique</strong>
+    </footer>
+  </main>
+
+  <script>
+    const urls = {
+      data: '{% url "get_queue_data" queue.id %}',
+      agents: '{% url "get_agents_data" queue.id %}'
+    };
+    function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char])); }
+    function statusLabel(status) { return {available: 'Disponible', busy: 'Occupé', break: 'Pause', offline: 'Hors ligne'}[status] || status; }
+    function renderClock() {
+      const now = new Date();
+      document.getElementById('board-date').textContent = now.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+      document.getElementById('board-time').textContent = now.toLocaleTimeString('fr-FR');
+    }
+    function renderBoard(queueData, agents) {
+      const latest = (queueData.served_items || [])[0];
+      document.getElementById('waiting-count').textContent = `${queueData.current_count || 0} en attente`;
+      document.getElementById('available-count').textContent = `${queueData.available_agents || 0} disponible(s)`;
+      document.getElementById('board-status').textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR');
+
+      if (latest) {
+        document.getElementById('now-ticket').textContent = String(latest.position).padStart(3, '0');
+        const counter = latest.assigned_agent__agent_number ? `Guichet ${latest.assigned_agent__agent_number} · ${latest.assigned_agent__name || ''}` : 'Guichet en cours';
+        document.getElementById('now-counter').textContent = counter;
+      } else {
+        document.getElementById('now-ticket').textContent = '--';
+        document.getElementById('now-counter').textContent = 'En attente d’appel';
+      }
+
+      const pending = (queueData.pending_items || []).slice(0, 8);
+      document.getElementById('next-list').innerHTML = pending.length ? pending.map(item => `
+        <div class="board-next-item">
+          <strong>${String(item.position).padStart(3, '0')}</strong>
+          <span>Ticket en attente</span>
+        </div>
+      `).join('') : '<div class="board-empty">Aucun ticket en attente.</div>';
+
+      document.getElementById('counter-list').innerHTML = agents.length ? agents.map(agent => `
+        <div class="board-counter-item status-${agent.status}">
+          <strong>Guichet ${agent.agent_number}</strong>
+          <span>${escapeHtml(agent.name)}</span>
+          <em>${statusLabel(agent.status)}</em>
+          <b>${agent.current_ticket__position ? '#' + agent.current_ticket__position : '-'}</b>
+        </div>
+      `).join('') : '<div class="board-empty">Aucun guichet configuré.</div>';
+    }
+    async function refreshBoard() {
+      try {
+        const [queueData, agentsData] = await Promise.all([fetch(urls.data).then(r => r.json()), fetch(urls.agents).then(r => r.json())]);
+        renderBoard(queueData, agentsData.agents || []);
+      } catch (e) { console.log(e); }
+    }
+    renderClock();
+    refreshBoard();
+    setInterval(renderClock, 1000);
+    setInterval(refreshBoard, 5000);
+  </script>
+</body>
+</html>

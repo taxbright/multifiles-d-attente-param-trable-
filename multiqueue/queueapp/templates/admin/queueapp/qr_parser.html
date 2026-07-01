@@ -1,0 +1,109 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+{% block title %}QR JSON Parser{% endblock %}
+{% block extrahead %}{{ block.super }}<link rel="stylesheet" href="{% static 'queueapp/css/toastify-lite.css' %}">{% endblock %}
+{% block content %}
+<h1>QR JSON Parser</h1>
+<p>Collez ici le contenu scanné depuis un QR (payload JSON) pour afficher et ouvrir la page du ticket.</p>
+<div class="card" style="padding:12px;">
+  <textarea id="qr-input" class="form-control" rows="4" placeholder='Collez le JSON du QR ici'></textarea>
+  <div style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+    <button id="paste-btn" class="button">Coller depuis le presse-papier</button>
+    <button id="parse-btn" class="button default">Analyser</button>
+    <button id="scan-btn" class="button" style="margin-left:6px;">Scanner depuis la caméra</button>
+    <div id="parse-result" style="margin-left:auto; align-self:center"></div>
+  </div>
+  <div id="qr-reader" style="margin-top:8px; display:none; max-width:480px;"></div>
+  <p class="help">Si le JSON contient <code>url</code> ou <code>ticket_id</code>, un bouton permettra d'ouvrir la page du ticket.</p>
+</div>
+<script src="{% static 'queueapp/js/qrcode.min.js' %}"></script>
+<script src="{% static 'queueapp/js/toastify-lite.js' %}"></script>
+<script>
+(function(){
+  var pasteBtn = document.getElementById('paste-btn');
+  var parseBtn = document.getElementById('parse-btn');
+  var qrInput = document.getElementById('qr-input');
+  var parseResult = document.getElementById('parse-result');
+
+  function createOpenButton(url, label) {
+    var a = document.createElement('a');
+    a.className = 'button';
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = label || 'Ouvrir le ticket';
+    return a;
+  }
+
+  function tryParseAndShow(text) {
+    if (!text) { parseResult.innerHTML = '<span class="deletelink">Aucun contenu.</span>'; return; }
+    var parsed = null;
+    try { parsed = JSON.parse(text); }
+    catch(e) {
+      try { parsed = JSON.parse(decodeURIComponent(text)); }
+      catch(e2) { parseResult.innerHTML = '<span class="errornote">Contenu non valide JSON.</span>'; return; }
+    }
+    var info = document.createElement('div');
+    var pre = document.createElement('pre'); pre.style.maxWidth='480px'; pre.style.overflow='auto'; pre.textContent = JSON.stringify(parsed, null, 2);
+    info.appendChild(pre);
+    if (parsed.url) { info.appendChild(createOpenButton(parsed.url, 'Ouvrir la page du ticket')); }
+    else if (parsed.ticket_id) { var ticketUrl = window.location.origin + '/ticket/' + parsed.ticket_id + '/'; info.appendChild(createOpenButton(ticketUrl, 'Ouvrir le ticket (par id)')); }
+    parseResult.innerHTML = ''; parseResult.appendChild(info);
+  }
+
+  pasteBtn.addEventListener('click', function(){
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      navigator.clipboard.readText().then(function(text){ qrInput.value = text; tryParseAndShow(text); }).catch(function(){ parseResult.innerHTML='<span class="errornote">Impossible de lire le presse-papier.</span>'; });
+    } else { parseResult.innerHTML='<span class="info">API presse-papier non supportée.</span>'; }
+  });
+  parseBtn.addEventListener('click', function(){ tryParseAndShow(qrInput.value.trim()); });
+  
+  // Live camera scan using html5-qrcode (from CDN)
+  var scanBtn = document.getElementById('scan-btn');
+  var qrReaderDiv = document.getElementById('qr-reader');
+  var html5QrcodeScanner = null;
+
+  function stopScanner() {
+    if (html5QrcodeScanner) {
+      try { html5QrcodeScanner.stop().then(function(){ html5QrcodeScanner.clear(); }).catch(function(){ }); } catch(e) {}
+      html5QrcodeScanner = null;
+    }
+    qrReaderDiv.style.display = 'none';
+    scanBtn.textContent = 'Scanner depuis la caméra';
+  }
+
+  scanBtn.addEventListener('click', function(){
+    if (html5QrcodeScanner) { stopScanner(); return; }
+    // Load script if not present
+    if (typeof Html5Qrcode === 'undefined') {
+      var s = document.createElement('script');
+      s.src = 'https://unpkg.com/html5-qrcode@2.3.7/minified/html5-qrcode.min.js';
+      s.onload = startScanner;
+      s.onerror = function(){ appToast.error('Impossible de charger le scanner.'); parseResult.innerHTML = '<span class="errornote">Impossible de charger le scanner.</span>'; };
+      document.head.appendChild(s);
+    } else {
+      startScanner();
+    }
+  });
+
+  function startScanner(){
+    qrReaderDiv.style.display = 'block';
+    scanBtn.textContent = 'Arrêter le scan';
+    html5QrcodeScanner = new Html5Qrcode('qr-reader');
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+    html5QrcodeScanner.start({ facingMode: 'environment' }, config, (decodedText, decodedResult) => {
+      // Stop and show
+      stopScanner();
+      qrInput.value = decodedText;
+      tryParseAndShow(decodedText);
+    }, (errorMessage) => {
+      // ignore decode errors
+    }).catch(function(err){
+      appToast.error('Erreur démarrage caméra: '+(err && err.message ? err.message : err));
+      parseResult.innerHTML = '<span class="errornote">Erreur démarrage caméra: '+(err && err.message ? err.message : err)+'</span>';
+      stopScanner();
+    });
+  }
+})();
+</script>
+{% endblock %}

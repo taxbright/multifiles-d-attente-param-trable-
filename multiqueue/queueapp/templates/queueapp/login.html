@@ -1,0 +1,183 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if mode == 'register' %}Créer un compte{% else %}Connexion{% endif %} | Files d’Attente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'queueapp/img/favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'queueapp/css/react-icons-lite.css' %}">
+    <link rel="stylesheet" href="{% static 'queueapp/css/theme.css' %}">
+</head>
+<body class="auth-body auth-body-modern auth-video-page">
+    <video class="auth-bg-video" autoplay muted loop playsinline preload="metadata">
+        <source src="{% static 'queueapp/video/login-background.mp4' %}" type="video/mp4">
+    </video>
+    <div class="auth-bg-overlay"></div>
+
+    <main class="auth-layout auth-layout-modern auth-layout-cinematic">
+        <section class="auth-hero auth-hero-modern auth-hero-cinematic">
+            <nav class="auth-topbar" aria-label="Navigation de connexion">
+                <div class="brand-mark auth-brand-main">
+                    <img src="{% static 'queueapp/img/logo-files-attente.png' %}" alt="Logo Files d’Attente" class="brand-logo-img">
+                    <div>
+                        <span class="brand-title">Files d’Attente</span>
+                        <span class="brand-subtitle">Suite de gestion multi-files</span>
+                    </div>
+                </div>
+            </nav>
+
+            <span class="hero-kicker auth-rank"><i class="fas fa-shield-alt"></i> Plateforme professionnelle de gestion d’attente</span>
+
+            <h1 class="auth-title">Supervisez vos files, vos tickets et vos guichets en temps réel.</h1>
+            <p class="auth-text">
+                Une interface conçue pour les banques, aéroports, transports, administrations et centres de santé.
+                Gérez plusieurs départements, éditez les tickets PDF, visualisez les tableaux d’appel et organisez les guichets depuis un seul espace.
+            </p>
+
+            <div class="auth-points auth-points-modern auth-feature-row">
+                <span><i class="fas fa-layer-group"></i> Multi-files</span>
+                <span><i class="fas fa-ticket-alt"></i> Tickets PDF</span>
+                <span><i class="fas fa-tv"></i> Tableaux d’appel</span>
+                <span><i class="fas fa-file-export"></i> Exports CSV</span>
+            </div>
+
+            <div class="auth-socials auth-socials-pro" aria-label="Réseaux sociaux">
+                <a href="https://www.facebook.com/hajanjaratiana.njara" target="_blank" rel="noopener" class="auth-social-link" title="Facebook">
+                    <span>f</span><small>Facebook</small>
+                </a>
+                <a href="https://www.tiktok.com/@ny.anjara3?_r=1&_t=ZS-97MZPQ9o32D" target="_blank" rel="noopener" class="auth-social-link" title="TikTok">
+                    <span>♪</span><small>TikTok</small>
+                </a>
+                <a href="https://www.instagram.com/hajanjaratiana.njara?igsh=YWllb2xmcHh3eXVj" target="_blank" rel="noopener" class="auth-social-link" title="Instagram">
+                    <span>◎</span><small>Instagram</small>
+                </a>
+                <a href="https://t.me/Slerman70" target="_blank" rel="noopener" class="auth-social-link" title="Telegram">
+                    <span>➤</span><small>Telegram</small>
+                </a>
+                <a href="mailto:njaratiana184@gmail.com" class="auth-social-link" title="Gmail">
+                    <span>@</span><small>Gmail</small>
+                </a>
+                <a href="https://wa.me/261340181866" target="_blank" rel="noopener" class="auth-social-link" title="WhatsApp">
+                    <span>☏</span><small>WhatsApp</small>
+                </a>
+            </div>
+        </section>
+
+        <section class="auth-card auth-card-blur auth-card-frosted">
+            <div class="text-center mb-4">
+                <img src="{% static 'queueapp/img/logo-files-attente.png' %}" alt="Logo Files d’Attente" class="login-logo-main">
+                <h2 class="fw-bold mb-1">
+                    {% if mode == 'register' %}Créer un compte{% else %}Connexion{% endif %}
+                </h2>
+                <p class="text-muted mb-0">
+                    {% if mode == 'register' %}
+                        Créez votre compte et commencez une nouvelle session propre.
+                    {% else %}
+                        Connectez-vous pour accéder au tableau de supervision.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="auth-switch mb-4">
+                <a href="{% url 'login' %}" class="{% if mode != 'register' %}active{% endif %}">Se connecter</a>
+                <a href="{% url 'register' %}" class="{% if mode == 'register' %}active{% endif %}">Créer un compte</a>
+            </div>
+
+            {% if login_error %}
+            <div class="alert alert-danger rounded-4">{{ login_error }}</div>
+            {% endif %}
+
+            {% if register_error %}
+            <div class="alert alert-danger rounded-4">{{ register_error }}</div>
+            {% endif %}
+
+            {% if next and mode != 'register' %}
+            <div class="alert alert-info rounded-4">
+                Veuillez vous connecter avant d'accéder à cette page.
+            </div>
+            {% endif %}
+
+            {% if mode == 'register' %}
+            <form method="post" action="{% url 'register' %}" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_full_name" class="form-label fw-bold">Nom complet</label>
+                    <div class="input-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="full_name" value="{{ register_full_name|default:'' }}" autocomplete="name" id="id_full_name" class="form-control" placeholder="Votre nom complet">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_register_username" class="form-label fw-bold">Nom d'utilisateur</label>
+                    <div class="input-icon">
+                        <i class="fas fa-user-shield"></i>
+                        <input type="text" name="username" value="{{ register_username|default:'' }}" autocapitalize="none" autocomplete="username" maxlength="150" required id="id_register_username" class="form-control" placeholder="Exemple : admin">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_email" class="form-label fw-bold">Email</label>
+                    <div class="input-icon">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" value="{{ register_email|default:'' }}" autocomplete="email" id="id_email" class="form-control" placeholder="exemple@email.com">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_register_password" class="form-label fw-bold">Mot de passe</label>
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="password" autocomplete="new-password" required id="id_register_password" class="form-control" placeholder="Minimum 4 caractères">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="id_password_confirm" class="form-label fw-bold">Confirmer le mot de passe</label>
+                    <div class="input-icon">
+                        <i class="fas fa-check-circle"></i>
+                        <input type="password" name="password_confirm" autocomplete="new-password" required id="id_password_confirm" class="form-control" placeholder="Répétez le mot de passe">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary-custom w-100">
+                    <i class="fas fa-user-plus me-2"></i>Créer le compte et commencer
+                </button>
+            </form>
+
+            <p class="text-muted small mt-4 mb-0 text-center">
+                Le nouveau compte devient automatiquement super-utilisateur. Les tickets et les appels précédents sont remis à zéro pour démarrer une nouvelle utilisation.
+            </p>
+            {% else %}
+            <form method="post" action="{% url 'login' %}" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+                <div class="mb-3">
+                    <label for="id_username" class="form-label fw-bold">Nom d'utilisateur</label>
+                    <div class="input-icon">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="username" value="{{ login_username|default:'' }}" autofocus autocapitalize="none" autocomplete="username" maxlength="150" required id="id_username" class="form-control" placeholder="Exemple : admin">
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="id_password" class="form-label fw-bold">Mot de passe</label>
+                    <div class="input-icon">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="password" autocomplete="current-password" required id="id_password" class="form-control" placeholder="Votre mot de passe">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary-custom w-100">
+                    <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+                </button>
+            </form>
+
+            <p class="text-muted small mt-4 mb-0 text-center">
+                Pas encore de compte ? <a href="{% url 'register' %}" class="fw-bold">Créer un nouveau compte</a>.
+            </p>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>

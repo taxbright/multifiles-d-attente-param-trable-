@@ -1,0 +1,409 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ queue.name }} | Files d’Attente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'queueapp/img/favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'queueapp/css/react-icons-lite.css' %}">
+    <link rel="stylesheet" href="{% static 'queueapp/css/toastify-lite.css' %}">
+    <link rel="stylesheet" href="{% static 'queueapp/css/theme.css' %}">
+    <script src="{% static 'queueapp/js/qrcode.min.js' %}"></script>
+    <script src="{% static 'queueapp/js/toastify-lite.js' %}"></script>
+</head>
+<body class="mq-body cinematic-page-body">
+    {% csrf_token %}
+    <div id="voice-indicator" class="voice-indicator"><i class="fas fa-volume-up me-2"></i><span id="voice-text">Annonce vocale en cours...</span></div>
+
+    {{ queue_showcase|json_script:"queue-showcase-data" }}
+
+    <div id="ticket-preview-modal" class="ticket-preview-modal" aria-hidden="true">
+        <div class="ticket-preview-backdrop" data-close-preview="1"></div>
+        <section class="ticket-preview-card" role="dialog" aria-modal="true" aria-labelledby="ticket-preview-title">
+            <div class="ticket-preview-head">
+                <div>
+                    <span class="service-badge"><i class="fas fa-ticket-alt"></i>Aperçu avant impression</span>
+                    <h2 id="ticket-preview-title">Ticket PDF</h2>
+                    <p id="ticket-preview-subtitle">Vérifiez le ticket avant impression.</p>
+                </div>
+                <button class="preview-close" type="button" data-close-preview="1"><i class="fas fa-times"></i></button>
+            </div>
+            <iframe id="ticket-preview-frame" title="Aperçu PDF du ticket"></iframe>
+            <div class="ticket-preview-actions">
+                <a id="ticket-detail-link" class="btn btn-outline-secondary" target="_blank" rel="noopener"><i class="fas fa-eye me-2"></i>Voir le ticket</a>
+                <a id="ticket-download-link" class="btn btn-dark-custom" target="_blank" rel="noopener"><i class="fas fa-file-pdf me-2"></i>Exporter PDF</a>
+                <button id="ticket-print-preview-btn" class="btn btn-primary-custom" type="button"><i class="fas fa-print me-2"></i>Imprimer</button>
+            </div>
+        </section>
+    </div>
+
+    <main class="app-shell pb-5">
+        <header class="page-header">
+            <div class="page-header-card queue-command-header">
+                <div class="brand-mark">
+                    {% if queue_logo_url %}
+                    <img src="{{ queue_logo_url }}" alt="Logo {{ queue.name }}" class="department-header-logo" onerror="this.onerror=null;this.src='{% static queue_logo %}';">
+                    {% else %}
+                    <img src="{% static queue_logo %}" alt="Logo {{ queue.name }}" class="department-header-logo">
+                    {% endif %}
+                    <div>
+                        <span class="brand-subtitle">Files d’Attente · Département</span>
+                        <h1 class="page-title">{{ queue.name }}</h1>
+                        <p class="page-subtitle">{{ queue.get_service_type_display }} · Tickets PDF · Tableau d’appel par département</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{% url 'call_board' queue.id %}" class="btn btn-warning"><i class="fas fa-tv me-2"></i>Tableau d’appel</a>
+                    <a href="{% url 'index' %}" class="btn btn-light"><i class="fas fa-home me-2"></i>Accueil</a>
+                    <a href="{% url 'agents_list' queue.id %}" class="btn btn-dark-custom"><i class="fas fa-headset me-2"></i>Gérer les guichets</a>
+                    <a href="{% url 'tickets_export_page' %}?queue={{ queue.id }}" class="btn btn-light"><i class="fas fa-file-export me-2"></i>Exporter</a>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-light"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a>
+                </div>
+            </div>
+        </header>
+
+        <section class="queue-lanes-panel department-showcase-panel" data-department-showcase="hero">
+            <div class="department-showcase-bg" aria-hidden="true"></div>
+            <div class="department-showcase-overlay" aria-hidden="true"></div>
+            <div class="department-showcase-content">
+                <div class="lanes-title department-showcase-head">
+                    <div>
+                        <span class="hero-kicker"><i class="fas fa-map-signs"></i> {{ queue_showcase.eyebrow }}</span>
+                        <h2 class="mb-2">{{ queue_showcase.title }}</h2>
+                        <p class="department-showcase-text mb-2">{{ queue_showcase.description }}</p>
+                        <div class="department-showcase-meta">
+                            <span><i class="fas fa-images me-2"></i>Diaporama automatique toutes les 5 secondes</span>
+                            <span><i class="fas fa-building me-2"></i>{{ queue.name }}</span>
+                            <span><i class="fas fa-layer-group me-2"></i>{{ queue.get_service_type_display }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="department-landing-card">
+                    <div class="department-landing-logo">
+                        {% if queue_logo_url %}
+                        <img src="{{ queue_logo_url }}" alt="Logo {{ queue.name }}" onerror="this.onerror=null;this.src='{% static queue_logo %}';">
+                        {% else %}
+                        <img src="{% static queue_logo %}" alt="Logo {{ queue.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="department-landing-copy">
+                        <span class="department-service-label">{{ queue.get_service_type_display }}</span>
+                        <h3>{{ queue.name }}</h3>
+                        <p>Cette page conserve les mêmes actions : prise de ticket, appel vocal, répartition aux guichets, aperçu PDF et tableau d’appel indépendant.</p>
+                        <div class="department-landing-tags">
+                            <span><i class="fas fa-ticket-alt me-2"></i>Tickets PDF</span>
+                            <span><i class="fas fa-headset me-2"></i>Guichets dédiés</span>
+                            <span><i class="fas fa-tv me-2"></i>Tableau d’appel</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-card command-panel department-dashboard-panel" data-department-showcase="dashboard">
+            <div class="department-showcase-bg department-showcase-bg-soft" aria-hidden="true"></div>
+            <div class="department-showcase-overlay department-showcase-overlay-soft" aria-hidden="true"></div>
+            <div class="department-showcase-content department-dashboard-content">
+            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                <div>
+                    <span class="service-badge"><i class="fas fa-info-circle"></i><span id="status-text">{% if pending_items|length < queue.max_capacity %}Ouvert{% else %}Complet{% endif %}</span></span>
+                    <h2 class="mt-3 mb-1 fw-bold">Tableau de bord opérationnel</h2>
+                    <p class="text-muted mb-0">Création du ticket, aperçu PDF, impression et appel du prochain client.</p>
+                </div>
+                <div class="capacity-widget">
+                    <div class="d-flex justify-content-between small text-muted mb-1"><span>Occupation</span><span id="capacity-rate">0%</span></div>
+                    <div class="progress-soft"><span id="capacity-bar"></span></div>
+                </div>
+            </div>
+
+            <div class="stat-grid cockpit-stats">
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-database"></i></div><div class="stat-number">{{ queue.max_capacity }}</div><div class="stat-label">Capacité maximale</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-hourglass-half"></i></div><div class="stat-number" id="current-count">{{ pending_items|length }}</div><div class="stat-label">Tickets en attente</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-number" id="served-count">{{ served_items|length }}</div><div class="stat-label">Tickets traités</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-check"></i></div><div class="stat-number" id="available-agents">0</div><div class="stat-label">Guichets disponibles</div></div>
+            </div>
+
+            <div class="action-grid operations-grid">
+                <button id="add-btn" class="btn btn-primary-custom" {% if pending_items|length >= queue.max_capacity %}disabled{% endif %}><i class="fas fa-ticket-alt me-2"></i>Prendre un ticket</button>
+                <button id="next-btn" class="btn btn-success-custom" {% if pending_items|length == 0 %}disabled{% endif %}><i class="fas fa-bullhorn me-2"></i>Appeler le suivant</button>
+                <button id="auto-distribute-queue-btn" class="btn btn-dark-custom"><i class="fas fa-robot me-2"></i>Répartir aux guichets</button>
+                <a href="{% url 'export_tickets_csv' %}?queue={{ queue.id }}&status=all" class="btn btn-outline-secondary"><i class="fas fa-download me-2"></i>Export CSV</a>
+            </div>
+
+            <div id="agent-alert" class="assignment-alert mb-3" style="display:none;"><i class="fas fa-user-shield me-2"></i><span id="agent-alert-text">Aucun agent disponible pour le moment.</span></div>
+            <button id="reprint-btn" class="btn btn-outline-secondary w-100 mb-4" disabled><i class="fas fa-print me-2"></i>Ré-imprimer / revoir le dernier ticket PDF</button>
+
+            <div class="row g-3">
+                <div class="col-lg-7">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-clipboard-list me-2"></i>Tickets en attente</h5>
+                        <small class="text-muted" id="last-update">Actualisation automatique</small>
+                    </div>
+                    <div id="queue-list" class="queue-list">
+                        {% for item in pending_items %}
+                        <div class="queue-item" data-position="{{ item.position }}">
+                            <div><span class="position-badge"><i class="fas fa-hashtag"></i>Position {{ item.position }}</span><small class="text-muted ms-2">{{ item.created_at|date:"H:i:s" }}</small></div>
+                            <i class="fas fa-user-clock text-muted"></i>
+                        </div>
+                        {% empty %}<div class="empty-state">Aucun ticket en attente pour le moment.</div>{% endfor %}
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0 fw-bold"><i class="fas fa-headset me-2"></i>Guichets et agents</h5>
+                        <small class="text-muted">Temps réel</small>
+                    </div>
+                    <div id="agents-container" class="agent-grid"><div class="empty-state">Chargement des agents...</div></div>
+                </div>
+            </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const urls = {
+            add: '{% url "add_to_queue" queue.id %}',
+            next: '{% url "next_in_queue" queue.id %}',
+            data: '{% url "get_queue_data" queue.id %}',
+            agents: '{% url "get_agents_data" queue.id %}',
+            distribute: '{% url "auto_distribute_tasks" queue.id %}',
+            ticketDetailTemplate: '{% url "ticket_detail" 0 %}',
+            ticketPdfTemplate: '{% url "ticket_pdf" 0 %}'
+        };
+        const queueName = '{{ queue.name|escapejs }}';
+        const serviceLabel = '{{ queue.get_service_type_display|escapejs }}';
+        const maxCapacity = {{ queue.max_capacity }};
+        let refreshTimer = null;
+        let voiceEnabled = true;
+        let preferredVoice = null;
+
+        function urlFor(template, id) { return template.replace('/0/', '/' + id + '/'); }
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            const input = document.querySelector('[name=csrfmiddlewaretoken]');
+            return input ? input.value : '';
+        }
+        async function postJson(url) {
+            const response = await fetch(url, { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') } });
+            return response.json();
+        }
+        function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char])); }
+        function getFrenchFemaleVoice() {
+            const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+            const frenchVoices = voices.filter(v => String(v.lang || '').toLowerCase().startsWith('fr'));
+            const femaleKeywords = ['denise', 'hortense', 'sylvie', 'audrey', 'amelie', 'amélie', 'aurelie', 'aurélie', 'female', 'femme', 'google français'];
+            return frenchVoices.find(v => femaleKeywords.some(key => v.name.toLowerCase().includes(key))) || frenchVoices[0] || voices[0] || null;
+        }
+        function normalizeForMalagasyFrench(text) { return String(text || '').replace(/-/g, ' ').replace(/\s+/g, ' ').replace(/N°/g, 'numéro').trim(); }
+        function speakText(text) {
+            const indicator = document.getElementById('voice-indicator');
+            const label = document.getElementById('voice-text');
+            if (!('speechSynthesis' in window) || !voiceEnabled) return;
+            try {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(normalizeForMalagasyFrench(text));
+                preferredVoice = preferredVoice || getFrenchFemaleVoice();
+                if (preferredVoice) utterance.voice = preferredVoice;
+                utterance.lang = preferredVoice?.lang || 'fr-FR';
+                utterance.rate = 0.82;
+                utterance.pitch = 1.08;
+                utterance.volume = 0.95;
+                indicator.style.display = 'block';
+                label.textContent = 'Annonce vocale en cours...';
+                utterance.onend = () => indicator.style.display = 'none';
+                utterance.onerror = () => indicator.style.display = 'none';
+                speechSynthesis.speak(utterance);
+            } catch (e) { console.log(e); }
+        }
+        function enableVoice() {
+            if (!('speechSynthesis' in window)) return appToast.warning('La synthèse vocale n’est pas prise en charge par ce navigateur.');
+            preferredVoice = getFrenchFemaleVoice();
+            voiceEnabled = true;
+            const voiceState = document.getElementById('voice-state');
+            const button = document.getElementById('voice-enable-btn');
+            voiceState.classList.add('active');
+            voiceState.innerHTML = '<i class="fas fa-volume-up"></i><span>Voix activée : ' + escapeHtml(preferredVoice?.name || 'voix française') + '</span>';
+            button.innerHTML = '<i class="fas fa-check me-2"></i>Voix activée';
+            appToast.success('Voix d’annonce activée');
+            speakText('Voix d’annonce activée. Les appels seront prononcés en français.');
+        }
+        if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => { preferredVoice = getFrenchFemaleVoice(); };
+        function setLoading(button, loadingText, active) {
+            if (!button) return;
+            if (active) { button.dataset.original = button.innerHTML; button.disabled = true; button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>' + loadingText; }
+            else { button.disabled = false; if (button.dataset.original) button.innerHTML = button.dataset.original; }
+        }
+        function statusLabel(status) { return {available: 'Disponible', busy: 'Occupé', break: 'Pause', offline: 'Hors ligne'}[status] || status; }
+        function updateActionState(currentCount, availableAgents) {
+            const nextBtn = document.getElementById('next-btn');
+            const distributeBtn = document.getElementById('auto-distribute-queue-btn');
+            const alertBox = document.getElementById('agent-alert');
+            const alertText = document.getElementById('agent-alert-text');
+            const hasWaiting = Number(currentCount || 0) > 0;
+            const hasAgent = Number(availableAgents || 0) > 0;
+            nextBtn.disabled = !hasWaiting || !hasAgent;
+            distributeBtn.disabled = !hasWaiting || !hasAgent;
+            if (hasWaiting && !hasAgent) { alertText.textContent = 'Aucun guichet disponible : l’appel d’un ticket est bloqué jusqu’à ce qu’un agent soit disponible.'; alertBox.style.display = 'block'; }
+            else alertBox.style.display = 'none';
+        }
+        function renderAgents(agents) {
+            const container = document.getElementById('agents-container');
+            const available = agents.filter(agent => agent.status === 'available').length;
+            document.getElementById('available-agents').textContent = available;
+            if (!agents.length) { container.innerHTML = '<div class="empty-state">Aucun guichet n’est encore assigné à ce département.</div>'; return; }
+            container.innerHTML = agents.map(agent => {
+                const ticket = agent.current_ticket__position ? '#' + agent.current_ticket__position : '-';
+                return `<div class="agent-card counter-card status-border-${agent.status}">
+                    <div class="agent-top"><div><strong>Guichet ${agent.agent_number}</strong><br><small class="text-muted">${escapeHtml(agent.name)}</small></div><span class="status-pill status-${agent.status}">${statusLabel(agent.status)}</span></div>
+                    <div class="counter-ticket-label">Ticket actuel</div><div class="counter-ticket-number">${ticket}</div>
+                </div>`;
+            }).join('');
+        }
+        function renderQueue(data) {
+            document.getElementById('current-count').textContent = data.current_count;
+            document.getElementById('served-count').textContent = data.served_count;
+            document.getElementById('status-text').textContent = data.status_label;
+            document.getElementById('capacity-rate').textContent = data.capacity_rate + '%';
+            document.getElementById('capacity-bar').style.width = Math.min(data.capacity_rate, 100) + '%';
+            document.getElementById('add-btn').disabled = data.current_count >= data.max_capacity;
+            updateActionState(data.current_count, data.available_agents);
+            document.getElementById('last-update').textContent = 'Mis à jour à ' + new Date().toLocaleTimeString('fr-FR');
+            const list = document.getElementById('queue-list');
+            if (!data.pending_items.length) { list.innerHTML = '<div class="empty-state">Aucun ticket en attente pour le moment.</div>'; return; }
+            list.innerHTML = data.pending_items.map(item => `<div class="queue-item" data-position="${item.position}"><div><span class="position-badge"><i class="fas fa-hashtag"></i>Position ${item.position}</span><small class="text-muted ms-2">${new Date(item.created_at).toLocaleTimeString('fr-FR')}</small></div><i class="fas fa-user-clock text-muted"></i></div>`).join('');
+        }
+        async function refreshAll() {
+            try {
+                const [queueData, agentsData] = await Promise.all([fetch(urls.data).then(r => r.json()), fetch(urls.agents).then(r => r.json())]);
+                renderQueue(queueData); renderAgents(agentsData.agents || []);
+            } catch (e) { console.log('Erreur actualisation', e); }
+        }
+        function openTicketPreview(ticket) {
+            const modal = document.getElementById('ticket-preview-modal');
+            const frame = document.getElementById('ticket-preview-frame');
+            const detailLink = document.getElementById('ticket-detail-link');
+            const downloadLink = document.getElementById('ticket-download-link');
+            const subtitle = document.getElementById('ticket-preview-subtitle');
+            const detailUrl = ticket.ticket_url || urlFor(urls.ticketDetailTemplate, ticket.ticket_id);
+            const pdfUrl = ticket.ticket_pdf_url || urlFor(urls.ticketPdfTemplate, ticket.ticket_id);
+            frame.src = pdfUrl;
+            detailLink.href = detailUrl;
+            downloadLink.href = pdfUrl;
+            subtitle.textContent = `Département : ${ticket.department || queueName} · Ticket ${ticket.position} · ${ticket.people_ahead || 0} personne(s) devant vous.`;
+            modal.classList.add('show');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+        function closeTicketPreview() {
+            const modal = document.getElementById('ticket-preview-modal');
+            modal.classList.remove('show');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        document.querySelectorAll('[data-close-preview]').forEach(el => el.addEventListener('click', closeTicketPreview));
+        document.getElementById('ticket-print-preview-btn').addEventListener('click', () => {
+            const frame = document.getElementById('ticket-preview-frame');
+            try { frame.contentWindow.focus(); frame.contentWindow.print(); }
+            catch (e) { window.open(frame.src, '_blank'); }
+        });
+
+        document.getElementById('add-btn').addEventListener('click', async function() {
+            setLoading(this, 'Création...', true);
+            try {
+                const data = await postJson(urls.add);
+                if (data.status === 'ok') {
+                    appToast.success('Ticket créé : numéro ' + data.position);
+                    speakText('Ticket numéro ' + data.position + '. Département ' + (data.department || queueName) + '. Veuillez patienter dans la file d’attente.');
+                    localStorage.setItem('lastTicket', JSON.stringify(data));
+                    document.getElementById('reprint-btn').disabled = false;
+                    openTicketPreview(data);
+                    await refreshAll();
+                } else if (data.status === 'full') appToast.warning(data.message || 'File complète');
+                else appToast.error(data.message || 'Erreur');
+            } catch (e) { appToast.error('Erreur lors de la création du ticket'); }
+            setLoading(this, 'Création...', false);
+        });
+        document.getElementById('next-btn').addEventListener('click', async function() {
+            setLoading(this, 'Appel...', true);
+            try {
+                const data = await postJson(urls.next);
+                if (data.status === 'ok') {
+                    appToast.info(data.message);
+                    const agentLabel = data.agent ? 'guichet numéro ' + data.agent_number + ', auprès de ' + data.agent : 'guichet disponible';
+                    speakText('Département ' + (data.department || queueName) + '. Client numéro ' + data.position + ', veuillez vous présenter au ' + agentLabel + '.');
+                    await refreshAll();
+                } else if (data.status === 'empty') appToast.warning(data.message);
+                else if (data.status === 'no_agent') appToast.warning(data.message);
+                else appToast.error(data.message || 'Erreur');
+            } catch (e) { appToast.error('Erreur lors de l’appel du suivant'); }
+            setLoading(this, 'Appel...', false);
+            await refreshAll();
+        });
+        document.getElementById('auto-distribute-queue-btn').addEventListener('click', async function() {
+            setLoading(this, 'Répartition...', true);
+            try {
+                const data = await postJson(urls.distribute);
+                if (data.status === 'ok') {
+                    appToast.success(data.message);
+                    if (data.assignments && data.assignments.length) speakText(data.assignments.map(a => 'Client numéro ' + a.position + ', veuillez vous présenter au guichet numéro ' + a.agent_number + ', auprès de ' + a.agent).join('. '));
+                    await refreshAll();
+                } else appToast.warning(data.message || 'Aucune répartition possible');
+            } catch (e) { appToast.error('Erreur lors de la répartition automatique'); }
+            setLoading(this, 'Répartition...', false);
+            await refreshAll();
+        });
+        document.getElementById('reprint-btn').addEventListener('click', function() {
+            try {
+                const last = JSON.parse(localStorage.getItem('lastTicket') || '{}');
+                if (!last.position) return appToast.warning('Aucun ticket à ré-imprimer');
+                openTicketPreview(last);
+            } catch (e) { appToast.error('Ré-impression impossible'); }
+        });
+        if (localStorage.getItem('lastTicket')) document.getElementById('reprint-btn').disabled = false;
+        refreshAll();
+        refreshTimer = setInterval(refreshAll, 10000);
+    </script>
+    <script>
+    (function () {
+        const showcaseNode = document.getElementById('queue-showcase-data');
+        if (!showcaseNode) return;
+
+        let showcase = null;
+        try {
+            showcase = JSON.parse(showcaseNode.textContent);
+        } catch (error) {
+            showcase = null;
+        }
+
+        if (!showcase || !Array.isArray(showcase.slides) || !showcase.slides.length) return;
+
+        const panels = document.querySelectorAll('[data-department-showcase]');
+        panels.forEach((panel) => {
+            const bg = panel.querySelector('.department-showcase-bg');
+            if (!bg) return;
+
+            showcase.slides.forEach((src, index) => {
+                const slide = document.createElement('div');
+                slide.className = 'department-showcase-slide' + (index === 0 ? ' is-active' : '');
+                slide.style.backgroundImage = `url("${src}")`;
+                slide.setAttribute('aria-hidden', 'true');
+                bg.appendChild(slide);
+            });
+
+            const slides = bg.querySelectorAll('.department-showcase-slide');
+            if (slides.length <= 1) return;
+
+            let current = 0;
+            window.setInterval(() => {
+                slides[current].classList.remove('is-active');
+                current = (current + 1) % slides.length;
+                slides[current].classList.add('is-active');
+            }, 5000);
+        });
+    })();
+    </script>
+
+</body>
+</html>
