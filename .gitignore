@@ -1,0 +1,10 @@
+﻿.venv/
+pycache/
+*.pyc
+db.sqlite3
+staticfiles/
+.env
+.DS_Store
+multiqueue/.venv/
+multiqueue/db.sqlite3
+multiqueue/staticfiles/

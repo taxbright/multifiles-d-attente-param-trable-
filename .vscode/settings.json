@@ -1,0 +1,5 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv-1\\Scripts\\python.exe",
+  "python.pythonPath": "${workspaceFolder}\\.venv-1\\Scripts\\python.exe",
+  "claudeCodeChat.permissions.yoloMode": false
+}

@@ -1,0 +1,423 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agents | {{ queue.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'queueapp/img/favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'queueapp/css/react-icons-lite.css' %}">
+    <link rel="stylesheet" href="{% static 'queueapp/css/toastify-lite.css' %}">
+    <link rel="stylesheet" href="{% static 'queueapp/css/theme.css' %}">
+</head>
+<body class="mq-body cinematic-page-body">
+    <div id="voice-indicator" class="voice-indicator"><i class="fas fa-volume-up me-2"></i><span id="voice-text">Annonce vocale en cours...</span></div>
+
+    <main class="app-shell pb-5">
+        <header class="page-header">
+            <div class="page-header-card">
+                <div class="brand-mark">
+                    {% if queue_logo_url %}
+                    <img src="{{ queue_logo_url }}" alt="Logo {{ queue.name }}" class="department-header-logo" onerror="this.onerror=null;this.src='{% static queue_logo %}';">
+                    {% else %}
+                    <img src="{% static queue_logo %}" alt="Logo {{ queue.name }}" class="department-header-logo">
+                    {% endif %}
+                    <div>
+                        <h1 class="page-title">Gestion des agents</h1>
+                        <p class="page-subtitle">{{ queue.name }} · {{ queue.get_service_type_display }}</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{% url 'queue_detail' queue.id %}" class="btn btn-light"><i class="fas fa-arrow-left me-2"></i>Retour à la file</a>
+                    <button id="auto-distribute-btn" class="btn btn-dark-custom"><i class="fas fa-robot me-2"></i>Répartir automatiquement</button>
+                    <a href="{% url 'tickets_export_page' %}?queue={{ queue.id }}" class="btn btn-light"><i class="fas fa-file-export me-2"></i>Exports</a>
+                    <a href="{% url 'logout' %}" class="btn btn-outline-light"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a>
+                </div>
+            </div>
+        </header>
+
+        {% csrf_token %}
+        <section class="queue-voice-panel" aria-label="Annonce vocale des tickets">
+            <div>
+                <span class="voice-chip"><i class="fas fa-volume-up"></i> Appel vocal guichet</span>
+                <h2>Annonce automatique lors de l’appel d’un ticket</h2>
+                <p>Quand un agent clique sur le bouton téléphone, le système annonce en français le numéro du ticket et le guichet correspondant.</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap align-items-center justify-content-end">
+                <div id="voice-state" class="voice-state"><i class="fas fa-volume-mute"></i><span>Voix prête</span></div>
+                <button id="voice-enable-btn" class="btn btn-primary-custom" type="button"><i class="fas fa-volume-up me-2"></i>Tester la voix</button>
+            </div>
+        </section>
+
+        <section class="panel-card">
+            <div class="stat-grid">
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-number" id="total-agents">0</div><div class="stat-label">Agents actifs</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-number" id="available-count">0</div><div class="stat-label">Disponibles</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner"></i></div><div class="stat-number" id="busy-count">0</div><div class="stat-label">Occupés</div></div>
+                <div class="stat-card"><div class="stat-icon"><i class="fas fa-pause-circle"></i></div><div class="stat-number" id="break-count">0</div><div class="stat-label">En pause</div></div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div>
+                    <h2 class="fw-bold mb-1"><i class="fas fa-headset me-2"></i>Liste des guichets</h2>
+                    <p class="text-muted mb-0">Ajout, modification, suppression, changement de statut et appel FIFO par guichet.</p>
+                </div>
+                <button class="btn btn-primary-custom" data-bs-toggle="modal" data-bs-target="#addAgentModal"><i class="fas fa-user-plus me-2"></i>Ajouter un agent</button>
+            </div>
+
+            <div class="table-responsive table-pro">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Guichet</th>
+                            <th>Agent</th>
+                            <th>Statut</th>
+                            <th>Ticket actuel</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agents-tbody">
+                        <tr><td colspan="5" class="text-center text-muted py-4">Chargement...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <div class="modal fade" id="addAgentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Ajouter un agent</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <form id="addAgentForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="agentNumber" class="form-label fw-bold">Numéro de guichet</label>
+                            <input type="number" class="form-control" id="agentNumber" name="agent_number" min="1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="agentName" class="form-label fw-bold">Nom de l'agent</label>
+                            <input type="text" class="form-control" id="agentName" name="name" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary-custom"><i class="fas fa-save me-2"></i>Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editAgentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-user-edit me-2"></i>Modifier un agent</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <form id="editAgentForm">
+                    <input type="hidden" id="editAgentId" name="agent_id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="editAgentNumber" class="form-label fw-bold">Numéro de guichet</label>
+                            <input type="number" class="form-control" id="editAgentNumber" name="agent_number" min="1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAgentName" class="form-label fw-bold">Nom de l'agent</label>
+                            <input type="text" class="form-control" id="editAgentName" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAgentStatus" class="form-label fw-bold">Statut</label>
+                            <select class="form-select" id="editAgentStatus" name="status">
+                                <option value="available">Disponible</option>
+                                <option value="busy">Occupé</option>
+                                <option value="break">Pause</option>
+                                <option value="offline">Hors ligne</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary-custom"><i class="fas fa-save me-2"></i>Modifier</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'queueapp/js/toastify-lite.js' %}"></script>
+    <script>
+        const queueId = {{ queue.id }};
+        const queueName = '{{ queue.name|escapejs }}';
+        const serviceLabel = '{{ queue.get_service_type_display|escapejs }}';
+        const statusLabels = { available: 'Disponible', busy: 'Occupé', break: 'Pause', offline: 'Hors ligne' };
+        let cachedAgents = [];
+        let voiceEnabled = true;
+        let preferredVoice = null;
+
+        function getFrenchVoice() {
+            const voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+            const frenchVoices = voices.filter(v => String(v.lang || '').toLowerCase().startsWith('fr'));
+            const femaleKeywords = ['denise', 'hortense', 'sylvie', 'audrey', 'amelie', 'amélie', 'aurelie', 'aurélie', 'female', 'femme', 'google français'];
+            return frenchVoices.find(v => femaleKeywords.some(key => v.name.toLowerCase().includes(key))) || frenchVoices[0] || voices[0] || null;
+        }
+
+        function normalizeSpeechText(text) {
+            return String(text || '').replace(/-/g, ' ').replace(/N°/g, 'numéro').replace(/\s+/g, ' ').trim();
+        }
+
+        function speakText(text) {
+            const indicator = document.getElementById('voice-indicator');
+            const label = document.getElementById('voice-text');
+            if (!('speechSynthesis' in window) || !voiceEnabled) return;
+            try {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(normalizeSpeechText(text));
+                preferredVoice = preferredVoice || getFrenchVoice();
+                if (preferredVoice) utterance.voice = preferredVoice;
+                utterance.lang = preferredVoice?.lang || 'fr-FR';
+                utterance.rate = 0.82;
+                utterance.pitch = 1.08;
+                utterance.volume = 0.95;
+                if (indicator && label) {
+                    indicator.style.display = 'block';
+                    label.textContent = 'Annonce vocale en cours...';
+                    utterance.onend = () => indicator.style.display = 'none';
+                    utterance.onerror = () => indicator.style.display = 'none';
+                }
+                speechSynthesis.speak(utterance);
+            } catch (e) {
+                console.log(e);
+            }
+        }
+
+        function enableVoice() {
+            if (!('speechSynthesis' in window)) return appToast.warning('La synthèse vocale n’est pas prise en charge par ce navigateur.');
+            preferredVoice = getFrenchVoice();
+            voiceEnabled = true;
+            const voiceState = document.getElementById('voice-state');
+            const button = document.getElementById('voice-enable-btn');
+            if (voiceState) {
+                voiceState.classList.add('active');
+                voiceState.innerHTML = '<i class="fas fa-volume-up"></i><span>Voix activée : ' + escapeHtml(preferredVoice?.name || 'voix française') + '</span>';
+            }
+            if (button) button.innerHTML = '<i class="fas fa-check me-2"></i>Voix activée';
+            appToast.success('Voix d’annonce activée');
+            speakText('Voix d’annonce activée. Les appels de tickets seront prononcés en français.');
+        }
+
+        if ('speechSynthesis' in window) {
+            speechSynthesis.onvoiceschanged = () => { preferredVoice = getFrenchVoice(); };
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            const input = document.querySelector('[name=csrfmiddlewaretoken]');
+            return input ? input.value : '';
+        }
+
+        async function postUrl(url, body = null) {
+            const options = { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrftoken') } };
+            if (body) options.body = body;
+            return fetch(url, options).then(r => r.json());
+        }
+
+        function setLoading(btn, text, active) {
+            if (!btn) return;
+            if (active) {
+                btn.dataset.original = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>' + text;
+            } else {
+                btn.disabled = false;
+                if (btn.dataset.original) btn.innerHTML = btn.dataset.original;
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        }
+
+        function statusPill(status) {
+            return `<span class="status-pill status-${status}">${statusLabels[status] || status}</span>`;
+        }
+
+        function updateStats(agents) {
+            document.getElementById('total-agents').textContent = agents.length;
+            document.getElementById('available-count').textContent = agents.filter(a => a.status === 'available').length;
+            document.getElementById('busy-count').textContent = agents.filter(a => a.status === 'busy').length;
+            document.getElementById('break-count').textContent = agents.filter(a => a.status === 'break').length;
+        }
+
+        async function updateAgentsList() {
+            try {
+                const data = await fetch(`/queue/${queueId}/agents/data/`).then(r => r.json());
+                const agents = data.agents || [];
+                cachedAgents = agents;
+                updateStats(agents);
+
+                const tbody = document.getElementById('agents-tbody');
+                if (!agents.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Aucun agent actif.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = agents.map(agent => {
+                    const ticket = agent.current_ticket__position ? '#' + agent.current_ticket__position : '-';
+                    return `<tr>
+                        <td><strong>Guichet ${agent.agent_number}</strong></td>
+                        <td>${escapeHtml(agent.name)}</td>
+                        <td>${statusPill(agent.status)}</td>
+                        <td><strong>${ticket}</strong></td>
+                        <td class="text-end">
+                            <div class="agent-crud-actions" aria-label="Actions agent">
+                                <button class="agent-action-btn agent-action-call" onclick="callNextAgent(${agent.id})" title="Appeler le prochain ticket" aria-label="Appeler le prochain ticket">
+                                    <i class="fas fa-phone-alt" aria-hidden="true"></i>
+                                    <span class="agent-action-symbol" aria-hidden="true">☎</span>
+                                </button>
+                                <button class="agent-action-btn agent-action-edit" onclick="openEditAgent(${agent.id})" title="Modifier l'agent" aria-label="Modifier l'agent">
+                                    <i class="fas fa-pen-to-square" aria-hidden="true"></i>
+                                    <span class="agent-action-symbol" aria-hidden="true">✎</span>
+                                </button>
+                                <button class="agent-action-btn agent-action-available" onclick="setAgentStatus(${agent.id}, 'available')" title="Marquer disponible" aria-label="Marquer disponible">
+                                    <i class="fas fa-circle-check" aria-hidden="true"></i>
+                                    <span class="agent-action-symbol" aria-hidden="true">✓</span>
+                                </button>
+                                <button class="agent-action-btn agent-action-break" onclick="setAgentStatus(${agent.id}, 'break')" title="Mettre en pause" aria-label="Mettre en pause">
+                                    <i class="fas fa-circle-pause" aria-hidden="true"></i>
+                                    <span class="agent-action-symbol" aria-hidden="true">Ⅱ</span>
+                                </button>
+                                <button class="agent-action-btn agent-action-delete" onclick="deleteAgent(${agent.id})" title="Supprimer l'agent" aria-label="Supprimer l'agent">
+                                    <i class="fas fa-trash-can" aria-hidden="true"></i>
+                                    <span class="agent-action-symbol" aria-hidden="true">🗑</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('');
+            } catch (e) {
+                appToast.error('Erreur de chargement des agents');
+            }
+        }
+
+        async function callNextAgent(agentId) {
+            const data = await postUrl(`/queue/${queueId}/agent/${agentId}/call/`);
+            if (data.status === 'ok') {
+                appToast.success(data.message);
+                const agentLabel = data.agent_number ? 'guichet numéro ' + data.agent_number : 'guichet disponible';
+                speakText('Département ' + (data.department || queueName) + '. Ticket numéro ' + data.position + ', veuillez vous présenter au ' + agentLabel + ', auprès de ' + (data.agent || 'l’agent') + '.');
+            } else {
+                appToast.warning(data.message || 'Aucun ticket en attente');
+            }
+            updateAgentsList();
+        }
+
+        async function setAgentStatus(agentId, status) {
+            const body = new URLSearchParams();
+            body.append('status', status);
+            const data = await postUrl(`/agent/${agentId}/status/`, body);
+            if (data.status === 'ok') appToast.success(data.message);
+            else appToast.error(data.message || 'Erreur');
+            updateAgentsList();
+        }
+
+        function openEditAgent(agentId) {
+            const agent = cachedAgents.find(item => item.id === agentId);
+            if (!agent) {
+                appToast.error('Agent introuvable');
+                return;
+            }
+
+            document.getElementById('editAgentId').value = agent.id;
+            document.getElementById('editAgentNumber').value = agent.agent_number;
+            document.getElementById('editAgentName').value = agent.name;
+            document.getElementById('editAgentStatus').value = agent.status;
+
+            const modal = new bootstrap.Modal(document.getElementById('editAgentModal'));
+            modal.show();
+        }
+
+        async function deleteAgent(agentId) {
+            const agent = cachedAgents.find(item => item.id === agentId);
+            const label = agent ? `Guichet ${agent.agent_number} - ${agent.name}` : 'cet agent';
+            if (!confirm(`Voulez-vous vraiment supprimer ${label} ?`)) return;
+
+            const data = await postUrl(`/agent/${agentId}/delete/`);
+            if (data.status === 'ok') appToast.success(data.message);
+            else appToast.error(data.message || 'Erreur de suppression');
+            updateAgentsList();
+        }
+
+        document.getElementById('auto-distribute-btn').addEventListener('click', async function() {
+            setLoading(this, 'Répartition...', true);
+            try {
+                const data = await postUrl(`/queue/${queueId}/agents/distribute/`);
+                if (data.status === 'ok') {
+                    appToast.success(data.message);
+                    if (data.assignments && data.assignments.length) {
+                        speakText(data.assignments.map(a => 'Département ' + (a.department || queueName) + '. Ticket numéro ' + a.position + ', veuillez vous présenter au guichet numéro ' + a.agent_number + ', auprès de ' + a.agent).join('. '));
+                    }
+                } else {
+                    appToast.warning(data.message || 'Aucune répartition possible');
+                }
+                updateAgentsList();
+            } catch (e) {
+                appToast.error('Erreur lors de la répartition');
+            }
+            setLoading(this, 'Répartition...', false);
+        });
+
+        document.getElementById('addAgentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const submitBtn = this.querySelector('button[type="submit"]');
+            setLoading(submitBtn, 'Enregistrement...', true);
+            const formData = new FormData(this);
+            const data = await postUrl(`/queue/${queueId}/agents/add/`, formData);
+            setLoading(submitBtn, 'Enregistrement...', false);
+
+            if (data.status === 'ok') {
+                appToast.success(data.message);
+                this.reset();
+                bootstrap.Modal.getInstance(document.getElementById('addAgentModal')).hide();
+                updateAgentsList();
+            } else {
+                appToast.error(data.message || 'Erreur');
+            }
+        });
+
+        document.getElementById('editAgentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const agentId = document.getElementById('editAgentId').value;
+            const submitBtn = this.querySelector('button[type="submit"]');
+            setLoading(submitBtn, 'Modification...', true);
+            const formData = new FormData(this);
+            const data = await postUrl(`/agent/${agentId}/edit/`, formData);
+            setLoading(submitBtn, 'Modification...', false);
+
+            if (data.status === 'ok') {
+                appToast.success(data.message);
+                bootstrap.Modal.getInstance(document.getElementById('editAgentModal')).hide();
+                updateAgentsList();
+            } else {
+                appToast.error(data.message || 'Erreur');
+            }
+        });
+
+        document.getElementById('voice-enable-btn')?.addEventListener('click', enableVoice);
+        updateAgentsList();
+        setInterval(updateAgentsList, 10000);
+    </script>
+</body>
+</html>
