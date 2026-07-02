@@ -3,7 +3,7 @@ services:
     name: multiqueue
     runtime: python
     plan: free
-    buildCommand: ./build.sh
+    buildCommand: bash build.sh
     startCommand: gunicorn multiqueue.wsgi:application
     envVars:
       - key: PYTHON_VERSION
@@ -11,9 +11,13 @@ services:
       - key: DEBUG
         value: False
       - key: ALLOWED_HOSTS
-        value: .onrender.com,localhost,127.0.0.1
+        value: multiqueue.onrender.com,.onrender.com,localhost,127.0.0.1
       - key: CSRF_TRUSTED_ORIGINS
-        value: https://*.onrender.com
+        value: https://multiqueue.onrender.com,https://*.onrender.com
+      - key: DATABASE_SSLMODE
+        value: require
+      - key: DATABASE_CONN_MAX_AGE
+        value: 0
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
