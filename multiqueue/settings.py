@@ -1,4 +1,4 @@
-[02/07/2026 17:00] Lamine 🦅: """
+"""
 Django settings for multiqueue project.
 """
 
@@ -123,7 +123,7 @@ def _postgres_from_url(database_url):
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 USE_SUPABASE = _env_bool("USE_SUPABASE", False) or bool(DATABASE_URL)
-[02/07/2026 17:00] Lamine 🦅: if USE_SUPABASE:
+if USE_SUPABASE:
     if DATABASE_URL:
         DATABASES = {
             "default": _postgres_from_url(DATABASE_URL)
