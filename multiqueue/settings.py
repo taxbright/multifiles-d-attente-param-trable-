@@ -1,4 +1,4 @@
-"""
+[02/07/2026 17:00] Lamine 🦅: """
 Django settings for multiqueue project.
 """
 
@@ -6,13 +6,16 @@ from pathlib import Path
 import os
 from urllib.parse import urlparse, unquote
 
+
 BASE_DIR = Path(file).resolve().parent.parent
 
 
 def _env_bool(name, default=False):
     value = os.getenv(name)
+
     if value is None:
         return default
+
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
@@ -48,7 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
 
-    # Important : WhiteNoise doit être juste après SecurityMiddleware
+    # WhiteNoise doit rester juste après SecurityMiddleware.
     "whitenoise.middleware.WhiteNoiseMiddleware",
 
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -67,14 +70,17 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
 
-        # Important si tu as un dossier templates/ à la racine
+        # Templates globaux éventuels à la racine.
         "DIRS": [
             BASE_DIR / "templates",
         ],
 
+        # Active les templates dans queueapp/templates/queueapp/.
         "APP_DIRS": True,
+
         "OPTIONS": {
             "context_processors": [
+                "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
@@ -88,10 +94,18 @@ WSGI_APPLICATION = "multiqueue.wsgi.application"
 
 
 def _postgres_from_url(database_url):
+    """
+    Convertit DATABASE_URL Supabase/PostgreSQL en configuration Django.
+
+    Exemple :
+    postgresql://USER:PASSWORD@HOST:PORT/postgres?sslmode=require
+    """
     parsed = urlparse(database_url)
 
     if parsed.scheme not in {"postgres", "postgresql"}:
-        raise ValueError("DATABASE_URL doit commencer par postgres:// ou postgresql://")
+        raise ValueError(
+            "DATABASE_URL doit commencer par postgres:// ou postgresql://"
+        )
 
     return {
         "ENGINE": "django.db.backends.postgresql",
@@ -109,8 +123,7 @@ def _postgres_from_url(database_url):
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 USE_SUPABASE = _env_bool("USE_SUPABASE", False) or bool(DATABASE_URL)
-
-if USE_SUPABASE:
+[02/07/2026 17:00] Lamine 🦅: if USE_SUPABASE:
     if DATABASE_URL:
         DATABASES = {
             "default": _postgres_from_url(DATABASE_URL)
@@ -137,3 +150,77 @@ else:
             "NAME": BASE_DIR / "db.sqlite3",
         }
     }
+
+
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
+]
+
+
+LANGUAGE_CODE = "fr-fr"
+TIME_ZONE = "Indian/Antananarivo"
+
+USE_I18N = True
+USE_TZ = True
+
+
+# ==========================
+# FICHIERS STATIQUES / DESIGN
+# ==========================
+
+STATIC_URL = "/static/"
+
+# Dossier généré automatiquement par collectstatic.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Les fichiers statiques dans queueapp/static/ sont déjà détectés
+# grâce à django.contrib.staticfiles.
+STATICFILES_DIRS = []
+
+# Si un dossier static/ existe à la racine, on l’ajoute aussi.
+ROOT_STATIC_DIR = BASE_DIR / "static"
+
+if ROOT_STATIC_DIR.exists():
+    STATICFILES_DIRS.append(ROOT_STATIC_DIR)
+
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        "https://multiqueue.onrender.com,https://*.onrender.com,http://localhost:8000,http://127.0.0.1:8000"
+    ).split(",")
+    if origin.strip()
+]
+
+
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "index"
+LOGOUT_REDIRECT_URL = "login"
+
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
