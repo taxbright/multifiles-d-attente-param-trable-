@@ -1,7 +1,7 @@
 """
 Django settings for multiqueue project.
 """
-
+ 
 from pathlib import Path
 import os
 from urllib.parse import urlparse, unquote
