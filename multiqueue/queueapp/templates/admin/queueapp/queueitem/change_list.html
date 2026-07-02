@@ -1,0 +1,21 @@
+{% extends 'admin/change_list.html' %}
+{% load i18n %}
+
+{% block object-tools %}
+  {{ block.super }}
+  <div class="object-tools">
+    <ul class="object-tools">
+      <li>
+        <a href="{% url 'admin:queueitem-qr-parser' %}" class="addlink" style="margin-left:8px; display:inline-flex; align-items:center; gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+            <rect x="3" y="3" width="8" height="8" stroke="#0b5cff" stroke-width="1.5" rx="1"></rect>
+            <rect x="13" y="3" width="8" height="8" stroke="#0b5cff" stroke-width="1.5" rx="1"></rect>
+            <rect x="3" y="13" width="8" height="8" stroke="#0b5cff" stroke-width="1.5" rx="1"></rect>
+            <rect x="13" y="13" width="8" height="8" stroke="#0b5cff" stroke-width="1.5" rx="1"></rect>
+          </svg>
+          Parser QR JSON
+        </a>
+      </li>
+    </ul>
+  </div>
+{% endblock %}

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="980" viewBox="0 0 1800 980" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#071525"/>
+      <stop offset="0.45" stop-color="#13294b"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+    <linearGradient id="sunset" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f97316" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#22c55e" stop-opacity=".22"/>
+    </linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="8"/></filter>
+  </defs>
+  <rect width="1800" height="980" fill="url(#sky)"/>
+  <rect y="470" width="1800" height="510" fill="#06101f" opacity=".38"/>
+  <circle cx="1320" cy="270" r="190" fill="#facc15" opacity=".10" filter="url(#blur)"/>
+  <g opacity=".70">
+    <path d="M0 520 C260 450 405 590 690 520 C930 465 1080 560 1370 512 C1535 486 1660 485 1800 530 L1800 980 L0 980 Z" fill="url(#sunset)"/>
+    <path d="M0 700 C230 610 420 775 690 690 C980 590 1200 770 1470 690 C1620 650 1725 658 1800 690" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="6"/>
+  </g>
+  <g opacity=".18" stroke="#ffffff" stroke-width="1">
+    <path d="M0 0 H1800 M0 120 H1800 M0 240 H1800 M0 360 H1800 M0 480 H1800 M0 600 H1800 M0 720 H1800 M0 840 H1800"/>
+    <path d="M0 0 V980 M150 0 V980 M300 0 V980 M450 0 V980 M600 0 V980 M750 0 V980 M900 0 V980 M1050 0 V980 M1200 0 V980 M1350 0 V980 M1500 0 V980 M1650 0 V980"/>
+  </g>
+  <g fill="#22c55e" opacity=".52">
+    <path d="M70 460 C170 350 230 300 330 270 C245 350 190 430 170 550 Z"/>
+    <path d="M1630 450 C1530 310 1455 280 1350 260 C1450 365 1510 440 1530 570 Z"/>
+  </g>
+</svg>

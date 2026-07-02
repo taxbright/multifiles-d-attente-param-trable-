@@ -1,0 +1,13 @@
+{% load static i18n %}
+{% extends "admin/base.html" %}
+
+{% block title %}{% trans "Files d’Attente administration" %}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">
+    <img src="{% static 'queueapp/img/logo-files-attente.png' %}" alt="Files d’Attente" style="height:32px; vertical-align:middle; margin-right:10px; border-radius:8px; background:rgba(255,255,255,0.9); padding:4px; box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+    <span>Files d’Attente</span>
+  </a>
+</h1>
+{% endblock %}

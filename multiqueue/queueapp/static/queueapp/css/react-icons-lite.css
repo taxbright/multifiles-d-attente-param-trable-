@@ -1,0 +1,107 @@
+/*
+  React-icons-lite for Multi-Queue
+  Projet Django sans compilation React : cette feuille remplace la dépendance CDN Font Awesome
+  par des icônes locales légères, avec une API de classes compatible avec le code existant.
+*/
+.fa, .fas, .far, .fab {
+  font-style: normal;
+  font-weight: 700;
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols", Arial, sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1em;
+  min-width: 1.1em;
+  line-height: 1;
+  vertical-align: -0.12em;
+  text-rendering: geometricPrecision;
+}
+.fa::before, .fas::before, .far::before, .fab::before { display: inline-block; }
+.me-1.fa, .me-1.fas, .me-2.fa, .me-2.fas, .me-3.fa, .me-3.fas,
+.ms-2.fa, .ms-2.fas { width: auto; min-width: 1.1em; }
+.fa-2x { font-size: 2em; }
+.fa-spin::before { animation: ri-spin 0.85s linear infinite; }
+@keyframes ri-spin { to { transform: rotate(360deg); } }
+.fa-ambulance::before { content: "✚"; }
+.fa-arrow-left::before { content: "←"; }
+.fa-arrow-right::before { content: "→"; }
+.fa-building::before { content: "▦"; }
+.fa-bullhorn::before { content: "📣"; font-weight: 400; }
+.fa-calendar-alt::before { content: "▣"; }
+.fa-check::before { content: "✓"; }
+.fa-check-circle::before { content: "✓"; }
+.fa-clock::before { content: "◷"; }
+.fa-cog::before, .fa-tools::before { content: "⚙"; }
+.fa-concierge-bell::before { content: "◉"; }
+.fa-hashtag::before { content: "#"; }
+.fa-headset::before { content: "☎"; }
+.fa-list::before { content: "☰"; }
+.fa-microphone::before { content: "◉"; }
+.fa-mobile-alt::before { content: "▯"; }
+.fa-pause::before { content: "Ⅱ"; }
+.fa-pause-circle::before { content: "Ⅱ"; }
+.fa-phone::before { content: "☎"; }
+.fa-plus::before { content: "+"; }
+.fa-print::before { content: "⎙"; }
+.fa-robot::before { content: "⚙"; }
+.fa-spinner::before { content: "◌"; }
+.fa-syringe::before { content: "✚"; }
+.fa-tag::before { content: "◇"; }
+.fa-ticket-alt::before { content: "▰"; }
+.fa-times::before, .fa-times-circle::before { content: "×"; }
+.fa-user::before, .fa-user-tie::before { content: "●"; }
+.fa-user-clock::before { content: "◷"; }
+.fa-user-plus::before { content: "+"; }
+.fa-users::before, .fa-users-cog::before { content: "●●"; letter-spacing: -0.25em; margin-right: 0.15em; }
+.fa-utensils::before { content: "▣"; }
+.fa-volume-up::before { content: ")))"; font-size: .85em; letter-spacing: -0.15em; }
+.icon-soft {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  background: rgba(102,126,234,.12);
+  color: #667eea;
+  box-shadow: inset 0 0 0 1px rgba(102,126,234,.12);
+}
+.fa-chart-line::before { content: "⌁"; }
+.fa-layer-group::before { content: "▤"; }
+.fa-shield-alt::before { content: "◆"; }
+.fa-tv::before { content: "▭"; }
+.fa-route::before { content: "↬"; }
+.fa-database::before { content: "▥"; }
+.fa-sync-alt::before { content: "↻"; }
+.fa-info-circle::before { content: "i"; }
+.fa-user-check::before { content: "✓"; }
+.fa-hourglass-half::before { content: "◷"; }
+.fa-clipboard-list::before { content: "☰"; }
+.fa-qrcode::before { content: "▦"; }
+.fa-home::before { content: "⌂"; }
+.fa-save::before { content: "▣"; }
+
+/* Icônes supplémentaires utilisées dans la navigation et les cartes modernes */
+.fa-file-export::before { content: "⇩"; }
+.fa-sign-out-alt::before { content: "↪"; }
+.fa-download::before { content: "↓"; }
+.fa-female::before { content: "♀"; }
+.fa-map-signs::before { content: "◇"; }
+.fa-images::before { content: "▧"; }
+.fa-play::before { content: "▶"; }
+.fa-table::before { content: "▦"; }
+.fa-file-pdf::before { content: "▣"; }
+.fa-eye::before { content: "◉"; }
+.fa-user-shield::before { content: "◆"; }
+.fa-plane-departure::before { content: "✈"; }
+.fa-bus::before { content: "▰"; }
+.fa-store::before { content: "▣"; }
+.fa-university::before, .fa-landmark::before { content: "▥"; }
+.fa-hand-holding-usd::before { content: "◍"; }
+.fa-microscope::before { content: "⌕"; }
+.fa-hospital::before { content: "✚"; }
+.fa-file-signature::before { content: "✎"; }
+
+/* Icônes CRUD lisibles pour la gestion des agents */
+.fa-phone-alt::before { content: "☎"; }
+.fa-edit::before, .fa-user-edit::before, .fa-pen-to-square::before { content: "✎"; }
+.fa-trash::before, .fa-trash-can::before { content: "🗑"; font-weight: 400; }
+.fa-circle-check::before { content: "✓"; }
+.fa-circle-pause::before { content: "Ⅱ"; }

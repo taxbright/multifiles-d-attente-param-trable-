@@ -1,0 +1,112 @@
+/* Notifications style React-Toastify, sans dépendance React. */
+.Toastify__toast-container {
+  position: fixed;
+  z-index: 99999;
+  width: min(390px, calc(100vw - 32px));
+  pointer-events: none;
+}
+.Toastify__toast-container--top-right { top: 1rem; right: 1rem; }
+.Toastify__toast-container--top-left { top: 1rem; left: 1rem; }
+.Toastify__toast-container--bottom-right { right: 1rem; bottom: 1rem; }
+.Toastify__toast-container--bottom-left { left: 1rem; bottom: 1rem; }
+.Toastify__toast {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr 24px;
+  align-items: flex-start;
+  gap: .75rem;
+  min-height: 68px;
+  margin-bottom: .85rem;
+  padding: 15px 12px 13px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.96);
+  color: #1f2937;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, .18), 0 3px 10px rgba(15, 23, 42, .08);
+  overflow: hidden;
+  pointer-events: auto;
+  transform: translate3d(115%, 0, 0) scale(.98);
+  opacity: 0;
+  transition: transform 280ms cubic-bezier(.21,1.02,.73,1), opacity 220ms ease, box-shadow 200ms ease;
+  border: 1px solid rgba(148,163,184,.22);
+  border-left: 6px solid #667eea;
+  font-family: inherit;
+  backdrop-filter: blur(14px);
+}
+.Toastify__toast--visible { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+.Toastify__toast--leaving { transform: translate3d(115%, 0, 0) scale(.98); opacity: 0; }
+.Toastify__toast:hover { box-shadow: 0 22px 55px rgba(15, 23, 42, .22), 0 5px 14px rgba(15, 23, 42, .10); }
+.Toastify__toast-icon {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+  margin-top: 1px;
+  box-shadow: 0 7px 18px rgba(0,0,0,.14);
+}
+.Toastify__toast-body {
+  flex: 1 1 auto;
+  line-height: 1.38;
+  font-size: .96rem;
+  white-space: pre-line;
+  word-break: break-word;
+  padding-top: 2px;
+  color: #111827;
+}
+.Toastify__close-button {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(15,23,42,.06);
+  color: #64748b;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: .82;
+  padding: 0;
+  transition: background .18s ease, color .18s ease, transform .18s ease;
+}
+.Toastify__close-button:hover,
+.Toastify__close-button:focus { opacity: 1; background: rgba(15,23,42,.12); color: #111827; outline: none; transform: scale(1.04); }
+.Toastify__progress-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+  width: 100%;
+  transform-origin: left center;
+  animation-name: Toastify__trackProgress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  opacity: .95;
+}
+@keyframes Toastify__trackProgress { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.Toastify__toast--success { border-left-color: #22c55e; }
+.Toastify__toast--success .Toastify__toast-icon,
+.Toastify__toast--success .Toastify__progress-bar { background: linear-gradient(135deg,#22c55e,#16a34a); }
+.Toastify__toast--error { border-left-color: #ef4444; }
+.Toastify__toast--error .Toastify__toast-icon,
+.Toastify__toast--error .Toastify__progress-bar { background: linear-gradient(135deg,#ef4444,#dc2626); }
+.Toastify__toast--warning { border-left-color: #f59e0b; }
+.Toastify__toast--warning .Toastify__toast-icon,
+.Toastify__toast--warning .Toastify__progress-bar { background: linear-gradient(135deg,#f59e0b,#d97706); }
+.Toastify__toast--info,
+.Toastify__toast--default { border-left-color: #667eea; }
+.Toastify__toast--info .Toastify__toast-icon,
+.Toastify__toast--info .Toastify__progress-bar,
+.Toastify__toast--default .Toastify__toast-icon,
+.Toastify__toast--default .Toastify__progress-bar { background: linear-gradient(135deg,#667eea,#764ba2); }
+@media (max-width: 480px) {
+  .Toastify__toast-container { top: .75rem; right: .75rem; left: .75rem; width: auto; }
+  .Toastify__toast { grid-template-columns: 26px 1fr 24px; margin-bottom: .65rem; border-radius: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .Toastify__toast, .Toastify__close-button { transition: none; }
+  .Toastify__progress-bar { animation: none; }
+}

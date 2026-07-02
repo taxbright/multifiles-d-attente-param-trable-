@@ -1,0 +1,164 @@
+{% load static %}
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ticket {{ ticket_code }} | {{ queue.name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="icon" href="{% static 'queueapp/img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'queueapp/css/react-icons-lite.css' %}">
+  <link rel="stylesheet" href="{% static 'queueapp/css/toastify-lite.css' %}">
+  <link rel="stylesheet" href="{% static 'queueapp/css/theme.css' %}">
+</head>
+<body class="mq-body cinematic-page-body ticket-pro-body">
+  <main class="app-shell py-4 ticket-preview-shell">
+    <nav class="app-nav no-print ticket-pro-nav">
+      <div class="brand-mark">
+        {% if queue_logo_url %}
+        <img src="{{ queue_logo_url }}" alt="Logo {{ queue.name }}" class="department-header-logo" onerror="this.onerror=null;this.src='{% static queue_logo %}';">
+        {% else %}
+        <img src="{% static queue_logo %}" alt="Logo {{ queue.name }}" class="department-header-logo">
+        {% endif %}
+        <div>
+          <span class="brand-title">Files d’Attente</span>
+          <span class="brand-subtitle">Ticket officiel et aperçu PDF</span>
+        </div>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'queue_detail' queue.id %}" class="btn btn-light"><i class="fas fa-arrow-left me-2"></i>Retour file</a>
+        <a href="{% url 'call_board' queue.id %}" class="btn btn-warning"><i class="fas fa-tv me-2"></i>Tableau d’appel</a>
+        <a href="{% url 'index' %}" class="btn btn-light"><i class="fas fa-home me-2"></i>Accueil</a>
+      </div>
+    </nav>
+
+    <section class="ticket-pro-layout">
+      <aside class="ticket-pro-card no-print">
+        <div class="ticket-pro-perforation ticket-pro-perforation-top" aria-hidden="true"></div>
+        <div class="ticket-pro-perforation ticket-pro-perforation-bottom" aria-hidden="true"></div>
+
+        <div class="ticket-pro-header">
+          <div class="ticket-pro-logo-box">
+            {% if queue_logo_url %}
+            <img src="{{ queue_logo_url }}" alt="Logo {{ queue.name }}" class="ticket-pro-logo" onerror="this.onerror=null;this.src='{% static queue_logo %}';">
+            {% else %}
+            <img src="{% static queue_logo %}" alt="Logo {{ queue.name }}" class="ticket-pro-logo">
+            {% endif %}
+          </div>
+          <span class="ticket-pro-badge"><i class="fas fa-receipt"></i> Ticket officiel</span>
+        </div>
+
+        <div class="ticket-reference-card">
+          <div class="ticket-ref-header">
+            <div class="ticket-ref-welcome">
+              <strong>Bienvenue</strong>
+              <span>au Service d’Accueil</span>
+            </div>
+          </div>
+          <div class="ticket-ref-line"></div>
+          <div class="ticket-ref-label">NUMÉRO</div>
+          <div class="ticket-pro-number">{{ ticket_public_number }}</div>
+          <div class="ticket-ref-line small-line"></div>
+          <h1 class="ticket-pro-title">Département : {{ queue.name }}</h1>
+          <p class="ticket-pro-subtitle">{{ ticket_department_mention }}</p>
+        </div>
+
+        <div class="ticket-pro-divider"></div>
+
+        <div class="ticket-pro-info">
+          <div class="ticket-pro-row"><span>Code ticket</span><strong>{{ ticket_code }}</strong></div>
+          <div class="ticket-pro-row"><span>Personnes devant vous</span><strong>{{ people_ahead }}</strong></div>
+          <div class="ticket-pro-row"><span>Créé le</span><strong>{{ ticket.created_at|date:"d/m/Y à H:i" }}</strong></div>
+          <div class="ticket-pro-row"><span>Statut</span><strong class="ticket-pro-status {% if ticket.served %}is-served{% else %}is-waiting{% endif %}">{{ ticket.status }}</strong></div>
+          {% if ticket.assigned_agent %}
+          <div class="ticket-pro-row"><span>Guichet</span><strong>{{ ticket.assigned_agent.agent_number }}</strong></div>
+          <div class="ticket-pro-row"><span>Agent</span><strong>{{ ticket.assigned_agent.name }}</strong></div>
+          {% endif %}
+        </div>
+
+        <div class="ticket-pro-qr-box">
+          <div id="ticket-qr" class="ticket-pro-qr"></div>
+          <p>Scannez pour revoir le ticket.</p>
+        </div>
+
+        <div class="ticket-pro-actions">
+          <a href="{% url 'ticket_pdf' ticket.id %}" target="_blank" class="btn ticket-pro-btn ticket-pro-btn-dark"><i class="fas fa-file-pdf me-2"></i>Exporter PDF</a>
+          <button id="print-pdf-btn" type="button" class="btn ticket-pro-btn ticket-pro-btn-blue"><i class="fas fa-print me-2"></i>Imprimer le PDF</button>
+          <button id="copy-btn" type="button" class="btn ticket-pro-btn ticket-pro-btn-light"><i class="fas fa-qrcode me-2"></i>Copier les données QR</button>
+        </div>
+      </aside>
+
+      <section class="ticket-pro-preview panel-card">
+        <div class="ticket-pro-preview-head">
+          <div>
+            <span class="service-badge"><i class="fas fa-eye"></i>Aperçu avant impression</span>
+            <h2>Aperçu du ticket PDF</h2>
+            <p>Le ticket peut être vérifié avant export ou impression.</p>
+          </div>
+          <a href="{% url 'ticket_pdf' ticket.id %}" class="btn btn-primary-custom" target="_blank"><i class="fas fa-external-link-alt me-2"></i>Ouvrir le PDF</a>
+        </div>
+
+        <div class="ticket-pro-frame-wrap">
+          <object id="pdf-object" data="{% url 'ticket_pdf' ticket.id %}" type="application/pdf" class="ticket-pro-pdf-object">
+            <iframe id="pdf-frame" src="{% url 'ticket_pdf' ticket.id %}" title="Aperçu PDF du ticket" class="ticket-pro-pdf-object"></iframe>
+            <div class="ticket-pro-pdf-fallback">
+              <i class="fas fa-file-pdf"></i>
+              <strong>Aperçu PDF indisponible dans ce navigateur.</strong>
+              <span>Cliquez sur « Ouvrir le PDF » pour le consulter.</span>
+            </div>
+          </object>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="{% static 'queueapp/js/toastify-lite.js' %}"></script>
+  <script src="{% static 'queueapp/js/qrcode.min.js' %}"></script>
+  <script>
+    const payload = {
+      queue: "{{ queue.name|escapejs }}",
+      service: "{{ queue.get_service_type_display|escapejs }}",
+      position: {{ ticket.position }},
+      ticket_id: {{ ticket.id }},
+      ticket_code: "{{ ticket_code|escapejs }}",
+      public_number: "{{ ticket_public_number|escapejs }}",
+      people_ahead: {{ people_ahead }},
+      status: "{{ ticket.status|escapejs }}",
+      timestamp: "{{ ticket.created_at|date:'c' }}",
+      url: window.location.href
+    };
+
+    const qrTarget = document.getElementById('ticket-qr');
+    if (qrTarget && window.QRCode) {
+      new QRCode(qrTarget, {
+        text: JSON.stringify(payload),
+        width: 116,
+        height: 116,
+        colorDark: '#111827',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    document.getElementById('print-pdf-btn').addEventListener('click', () => {
+      const pdfUrl = "{% url 'ticket_pdf' ticket.id %}";
+      const win = window.open(pdfUrl, '_blank');
+      if (win) {
+        win.focus();
+        setTimeout(() => {
+          try { win.print(); } catch (e) { /* Le navigateur peut bloquer l'impression automatique. */ }
+        }, 800);
+      }
+    });
+
+    document.getElementById('copy-btn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+        appToast.success('Données QR copiées');
+      } catch(e) {
+        appToast.warning('Copie indisponible sur ce navigateur');
+      }
+    });
+  </script>
+</body>
+</html>

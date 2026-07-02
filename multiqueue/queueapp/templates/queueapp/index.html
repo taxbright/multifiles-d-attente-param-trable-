@@ -1,0 +1,117 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Files d’Attente | Supervision multi-files</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'queueapp/img/favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'queueapp/css/react-icons-lite.css' %}">
+    <link rel="stylesheet" href="{% static 'queueapp/css/theme.css' %}">
+</head>
+<body class="mq-body cinematic-home-body">
+    <main class="app-shell home-shell">
+        <nav class="app-nav mq-nav home-nav">
+            <div class="brand-mark">
+                <img src="{% static 'queueapp/img/logo-files-attente.png' %}" alt="Logo Files d’Attente">
+                <div>
+                    <span class="brand-title">Files d’Attente</span>
+                    <span class="brand-subtitle">Orchestration des départements et guichets</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap no-print nav-actions">
+                <a href="{% url 'tickets_export_page' %}" class="btn btn-glass"><i class="fas fa-file-export me-2"></i>Exporter</a>
+                <a href="{% url 'logout' %}" class="btn btn-light"><i class="fas fa-sign-out-alt me-2"></i>Déconnexion</a>
+            </div>
+        </nav>
+
+        <section class="home-hero-magnific home-hero-video">
+            <video class="home-hero-bg-video" autoplay muted loop playsinline preload="metadata">
+                <source src="{% static 'queueapp/video/login-background.mp4' %}" type="video/mp4">
+            </video>
+            <div class="home-hero-video-overlay"></div>
+            <div class="home-hero-copy">
+                <span class="hero-kicker home-rank"><i class="fas fa-layer-group"></i> Centre de supervision multi-files</span>
+                <h1>La plateforme pour piloter vos files d’attente professionnelles.</h1>
+                <p>
+                    Gérez plusieurs départements comme dans un aéroport, une banque, un centre de santé ou une administration.
+                    Chaque service possède ses tickets, ses guichets et son tableau d’appel indépendant.
+                </p>
+                <div class="hero-actions">
+                    {% if queue_cards %}
+                    <a href="{% url 'queue_detail' queue_cards.0.id %}" class="btn btn-primary-custom"><i class="fas fa-bullhorn me-2"></i>Commencer la gestion</a>
+                    <a href="{% url 'call_board' queue_cards.0.id %}" class="btn btn-outline-light"><i class="fas fa-play me-2"></i>Voir un tableau d’appel</a>
+                    {% endif %}
+                    <a href="{% url 'tickets_export_page' %}" class="btn btn-glass"><i class="fas fa-table me-2"></i>Exports CSV</a>
+                </div>
+                <p class="home-trust">Tickets PDF · Appels vocaux · Départements paramétrables · Interface responsive</p>
+            </div>
+
+            <aside class="home-hero-list" aria-label="Départements principaux">
+                <h2>Départements intégrés</h2>
+                {% for card in queue_cards|slice:":7" %}
+                <a href="{% url 'queue_detail' card.id %}" class="home-service-link {% if forloop.first %}active{% endif %}">
+                    {% if card.logo_url %}
+                    <img src="{{ card.logo_url }}" alt="Logo {{ card.name }}" onerror="this.onerror=null;this.src='{% static card.logo %}';">
+                    {% else %}
+                    <img src="{% static card.logo %}" alt="Logo {{ card.name }}">
+                    {% endif %}
+                    <span>{{ card.name }}</span>
+                    <em>{{ card.current_count }} attente</em>
+                </a>
+                {% empty %}
+                <div class="home-service-link active"><span>Aucun département actif</span></div>
+                {% endfor %}
+            </aside>
+        </section>
+
+        <section class="metric-strip mq-metrics home-metrics" aria-label="Indicateurs globaux">
+            <div class="metric-card"><span class="metric-value">{{ queues|length }}</span><span class="metric-label">Départements actifs</span></div>
+            <div class="metric-card"><span class="metric-value">{{ total_waiting }}</span><span class="metric-label">Tickets en attente</span></div>
+            <div class="metric-card"><span class="metric-value">{{ available_agents }}</span><span class="metric-label">Guichets disponibles</span></div>
+            <div class="metric-card"><span class="metric-value">{{ saturation_rate }}%</span><span class="metric-label">Occupation globale</span></div>
+        </section>
+
+        <section class="operations-overview home-overview">
+            <div>
+                <h2 class="section-title"><i class="fas fa-route me-2"></i>Départements paramétrables</h2>
+                <p class="section-subtitle">Guichet Aéroport, Guichet Soa Trans, Manitra Plus, BNI Madagascar, BFV, Micro-finance, Institut Pasteur, CHU, Administratif et tous les départements existants.</p>
+            </div>
+            <div class="overview-pill"><i class="fas fa-users-cog"></i>{{ total_agents }} agents actifs · {{ busy_agents }} occupés</div>
+        </section>
+
+        <section class="services-grid services-grid-modern departments-logo-grid mb-5">
+            {% for card in queue_cards %}
+            <article class="service-card queue-hub-card department-card department-card-logo">
+                <div class="card-topline">
+                    <div class="department-logo-box">
+                        {% if card.logo_url %}
+                    <img src="{{ card.logo_url }}" alt="Logo {{ card.name }}" onerror="this.onerror=null;this.src='{% static card.logo %}';">
+                    {% else %}
+                    <img src="{% static card.logo %}" alt="Logo {{ card.name }}">
+                    {% endif %}
+                    </div>
+                    <span class="hub-status {% if card.status_label == 'Complet' %}is-full{% endif %}">{{ card.status_label }}</span>
+                </div>
+                <h3 class="service-title">{{ card.name }}</h3>
+                <span class="service-badge"><i class="fas fa-tag"></i>{{ card.service_type }}</span>
+                <div class="queue-metrics-mini">
+                    <div><b>{{ card.current_count }}</b><span>en attente</span></div>
+                    <div><b>{{ card.available_agents }}</b><span>guichets libres</span></div>
+                    <div><b>{{ card.served_count }}</b><span>traités</span></div>
+                </div>
+                <div class="service-progress" aria-label="Occupation de la file"><span style="width: {{ card.capacity_rate }}%"></span></div>
+                <p class="service-meta"><i class="fas fa-users me-1"></i>Capacité maximale : <strong>{{ card.max_capacity }}</strong> personnes en attente.</p>
+                <div class="card-actions-double">
+                    <a href="{% url 'queue_detail' card.id %}" class="btn btn-primary-custom w-100">Gérer la file <i class="fas fa-arrow-right ms-2"></i></a>
+                    <a href="{% url 'call_board' card.id %}" class="btn btn-dark-custom w-100"><i class="fas fa-tv me-2"></i>Tableau d’appel</a>
+                </div>
+            </article>
+            {% empty %}
+            <div class="empty-state">Aucune file d'attente active n'est disponible.</div>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

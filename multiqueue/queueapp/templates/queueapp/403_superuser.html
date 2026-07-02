@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accès réservé | Files d’Attente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'queueapp/img/favicon.svg' %}" type="image/svg+xml">
+    <link rel="stylesheet" href="{% static 'queueapp/css/react-icons-lite.css' %}">
+    <link rel="stylesheet" href="{% static 'queueapp/css/theme.css' %}">
+</head>
+<body class="auth-body">
+    <main class="auth-layout">
+        <section class="auth-hero">
+            <div class="brand-mark mb-4">
+                <img src="{% static 'queueapp/img/logo-files-attente.png' %}" alt="Logo Files d’Attente">
+                <div>
+                    <span class="brand-title">Files d’Attente</span>
+                    <span class="brand-subtitle">Accès sécurisé aux données</span>
+                </div>
+            </div>
+            <span class="hero-kicker"><i class="fas fa-user-shield"></i> Accès réservé</span>
+            <h1 class="auth-title">Cette zone est réservée au super-utilisateur.</h1>
+            <p class="auth-text">
+                Pour protéger les données de Supabase et les tickets de l'application,
+                seul un compte Django avec le statut super-utilisateur peut accéder à cette page.
+            </p>
+        </section>
+        <section class="auth-card text-center">
+            <img src="{% static 'queueapp/img/logo-files-attente.png' %}" alt="Logo" width="72" height="72" class="mb-3">
+            <h2 class="fw-bold mb-3">Accès refusé</h2>
+            <p class="text-muted">Votre compte est connecté, mais il n'a pas les droits de super-utilisateur.</p>
+            <a href="{% url 'logout' %}" class="btn btn-primary-custom w-100 mt-3">
+                <i class="fas fa-sign-out-alt me-2"></i>Se déconnecter
+            </a>
+        </section>
+    </main>
+</body>
+</html>
